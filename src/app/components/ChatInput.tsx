@@ -4,12 +4,21 @@
  import { FC, HTMLAttributes, useState  } from 'react'
  import TextareaAutsize from 'react-textarea-autosize'
  import {nanoid} from 'nanoid'
-import { Message } from '@/lib/validators/message'
+ import { Message } from '@/lib/validators/message'
 
  interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {}
 
  const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
     const [input, setInput] = useState<string>('')
+    const {
+        messages,
+        addMessages,
+        removeMessage,
+        updateMessage,
+        setIsMessageUpdating,
+    } = useContext(MessageContext)
+
+    const textareaRef = useRef<null | HTMLTextAreaElement>(null)
 
     const { mutate: sendMessage, isLoading } = useMutation({
         mutationFn: async (message: Message) => {
@@ -23,8 +32,22 @@ import { Message } from '@/lib/validators/message'
 
             return response.body
         },
-        onSuccess: (stream) => {
+        onMutate(message) {
+            addMessages(message)
+        }
+        onSuccess: async (stream) => {
             if(!stream) throw new Error('No stream found')
+
+            const id = nanoid()
+            const responseMessage: Message ={
+                id,
+                isUserMessage: false,
+                text: '',
+            }
+
+            addMessages(responseMessage)
+
+            setIsMessageUpdating(true)
 
             const reader = stream.getReder()
             const decoder = new TextDecoder()
@@ -34,15 +57,24 @@ import { Message } from '@/lib/validators/message'
                 const {value, done: doneReadng } = await reader.read()
                 done = doneReadng
                 const chunkValue = decoder.decode(value)
-                console.log(chuckValue)
+                updateMessage(id, (prev) => prev + chunkValue)
             }
-        }
+
+            // clean up
+            setIsMessageUpdating(false)
+            setInput('')
+
+            setTimeout(() => {
+                textareaRef.current?.focus()
+            }, 10)
+        }, 
     })
 
     return (
         <div {...props} className = {cn('border-t border-zinc-300', className)}>
             <div className='relative mt-4 flex-1 overflow-hidden rounded-lg border-none outline-none'>
                 <TextareaAutsize 
+                ref={text}
                 rows={2}
                 onKeyDown={(e) => {
                     if(e.key === 'Enter' && !e.shiftKey) {
