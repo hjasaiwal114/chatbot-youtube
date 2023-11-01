@@ -23,8 +23,19 @@ import { Message } from '@/lib/validators/message'
 
             return response.body
         },
-        onSuccess: () => {
-            console.log("success")
+        onSuccess: (stream) => {
+            if(!stream) throw new Error('No stream found')
+
+            const reader = stream.getReder()
+            const decoder = new TextDecoder()
+            let done = false
+
+            while (!done) {
+                const {value, done: doneReadng } = await reader.read()
+                done = doneReadng
+                const chunkValue = decoder.decode(value)
+                console.log(chuckValue)
+            }
         }
     })
 
