@@ -5,6 +5,8 @@
  import TextareaAutsize from 'react-textarea-autosize'
  import {nanoid} from 'nanoid'
  import { Message } from '@/lib/validators/message'
+ import { CornerDownLeft } from 'lucide-react'
+ import { toast } from 'react-hot-toast'
 
  interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -68,6 +70,11 @@
                 textareaRef.current?.focus()
             }, 10)
         }, 
+        onError(_, messages ) {
+            toast.error('something went wrong, Pleasr try again.')
+            removeMessage(message.id)
+            textareaRef.current?.focus()
+        },
     })
 
     return (
@@ -88,12 +95,28 @@
                     }
                 }}
                 maxRows={4}
+                disabled={isLoading}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 autoFocus
                 placeholder='Write a message...'
                 className='peer disable: opacity-50 pr-14 resize-name block w-full border-0 bg-zinc-100 py-1.5 text-gray-900 focus:ring-0 text-sm sm:leading-6'
                 />
+
+                  <div className="absolute inset-y-0 flex py-1.5 pr-1.5">
+                    <kbd className='inline-flex items-center rounded border bg-white border-gray-200 px-1 font-sans text-xs text-gray-400'>
+                        {isLoading ? (
+                            <Loader2 className = 'w-3 h-3 animate-spin' />
+                        ) : (
+                            <CornerDownLeft className='w-3 h-3' />
+                        
+                        )}
+                    </kbd>
+                  </div>  
+
+                  <div aria-hidden='true'
+                   className='absolute inset-x-0 bottom-0 border-t border-gray-300 peer-focus:border-t-2 peer-focus:border-indigo-600'      
+                  /> 
             </div>
         </div>
     )
